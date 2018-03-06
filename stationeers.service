@@ -1,0 +1,13 @@
+[Unit]
+Description=Stationeers Dedicated Server
+After=network.target
+
+[Service]
+Type=simple
+User=steam
+Group=steam
+ExecStart=/home/steam/stationeers/rocketstation_DedicatedServer.x86_64 -autostart -nographics -batchmode
+ExecStop=/bin/kill -15 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
