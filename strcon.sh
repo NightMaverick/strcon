@@ -68,8 +68,6 @@ function START {
      c=$c+1
    fi
    sleep 0.5
-
-   sleep 0.5
   done
 
 }
