@@ -18,7 +18,7 @@ Commands:
 
 2) message|notice <text message> - sends a message to all players on the server.
 
-3)
+3) start - starting server
 
 ==========================================
 
@@ -40,7 +40,7 @@ Commands:
 
 2) message|notice <text message> - отправляет сообщение всем игрокам на сервере.
 
-3)
+3) start - запуск сервера
 
 ==========================================
 
