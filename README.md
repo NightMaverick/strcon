@@ -45,8 +45,13 @@ Commands:
 ==========================================
 
 by Maverick
+
 Благодарность можно направлять по слеующим адресам:
+
 e-mail: anton.maverick@gmail.com
+
 Webmoney: Z428590895762
+
 Yandex: 41001672790326
+
 Bitcoin: 15p12jHb9Vuq9r7yPSt7Xwh2M1aWgBYvZC
