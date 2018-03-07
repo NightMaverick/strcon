@@ -21,7 +21,7 @@ WORLDNAME=Mars_One # Name for saves
 CLEARALLINTERVAL=60
 
 #Autoconfig from default.ini
-PASSWORD=$(cat $GAMEDIR/default.ini | grep PASSWORD | awk -F"=" '{print $2}')
+PASSWORD=$(cat $GAMEDIR/default.ini | grep RCONPASSWORD | awk -F"=" '{print $2}')
 SERVER_PORT=$(cat $GAMEDIR/default.ini | grep GAMEPORT | awk -F"=" '{print $2}')
 SERVER_NAME=$(cat $GAMEDIR/default.ini | grep SERVERNAME | awk -F"=" '{print $2}')
 MAP_NAME=$(cat $GAMEDIR/default.ini | grep MAPNAME | awk -F"=" '{print $2}')
@@ -41,36 +41,6 @@ function PORT {
  exec 3<&-
 }
 
-function START {
- ( /home/steam/stationeers/rocketstation_DedicatedServer.x86_64 -autostart -nographics -batchmode -autosaveinterval=$AUTOSAVE -worldname="$WORLDNAME" -worldtype=$WORLD_TYPE -gameport=$SERVERPORT -clearallinterval=$CLEARALLINTERVAL & ) > /dev/null 2>&1
- ( wait 1 ) > /dev/null 2>&1
- PID=$(pidof rocketstation_DedicatedServer.x86_64)
- if [ -z "$PID" ]
-  then
-   echo "Server NOT started!"
-   return
-  else
-   echo "Server starting..."
- fi
- PORT
- while [ "$PORT_STATUS" == "0" ]
-  do
-   if [ "$с" == "20" ]
-    then
-     echo "Server NOT started!"
-     break
-   fi
-   PORT
-   if (($PORT_STATUS==1))
-    then
-     echo "Server started."
-    else
-     c=$c+1
-   fi
-   sleep 0.5
-  done
-
-}
 
 function KILL {
  PID=$(pidof rocketstation_DedicatedServer.x86_64)
@@ -98,7 +68,6 @@ fi
 
 function USERS_LIST {
 GET_USERS
-
 if [ "$TABLE" == 0 ]
  then
   echo "No Players"
@@ -161,6 +130,42 @@ function GET_STATUS {
    echo "Game Status: "$GAME_STATUS
    echo "Players: "$PLAYERS
  fi
+}
+
+function START {
+ GET_STATUS silent
+ if [ "$GAME_STATUS" == "Joining" -o "$GAME_STATUS" == "Running" ]
+  then
+   echo "Server alredy running."
+   return
+ fi
+ ( $GAMEDIR/rocketstation_DedicatedServer.x86_64 -autostart -nographics -batchmode -autosaveinterval=$AUTOSAVE -worldname="$WORLDNAME" -worldtype=$WORLD_TYPE -gameport=$SERVERPORT -clearallinterval=$CLEARALLINTERVAL & ) > /dev/null 2>&1
+ ( wait 1 ) > /dev/null 2>&1
+ PID=$(pidof rocketstation_DedicatedServer.x86_64)
+ if [ -z "$PID" ]
+  then
+   echo "Server NOT started!"
+   return
+  else
+   echo "Server starting..."
+ fi
+ PORT
+ while [ "$PORT_STATUS" == "0" ]
+  do
+   if [ "$с" == "20" ]
+    then
+     echo "Server NOT started!"
+     break
+   fi
+   PORT
+   if (($PORT_STATUS==1))
+    then
+     echo "Server started."
+    else
+     c=$c+1
+   fi
+   sleep 0.5
+  done
 }
 
 function MESSAGE {
