@@ -7,7 +7,7 @@ Stationeers Bash Console
     status state - вывод статуса сервера
     status players - вывод списка игроков в виде таблицы
     status players_count - вывод количества игроков
-2)
+2) message | notice <text message> - отправить на сервер сообщение
 
 ==========================================
 Maverick

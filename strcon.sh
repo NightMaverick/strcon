@@ -2,21 +2,82 @@
 #==========================================
 #by Maverick
 #anton.maverick@gmail.com
-#Поддержи автора:
+#:
 #Webmoney: Z428590895762
 #Yandex: 41001672790326
 #Bitcoin: 15p12jHb9Vuq9r7yPSt7Xwh2M1aWgBYvZC
 #==========================================
 
-#Config
+#Script config
 DEMO="GameVersion : 0.1.1193.5974<br>GameStatus : Running<br>2 Player(s) connected.<br><table><tr><th>display name</th><th>steamId</th><th>score</th><th>playtime</th><th>ping</th></tr><tr><td>Maverick</td><td>22222222222222222</td><td>0</td><td>00:00:03</td><td>2 ms</td></tr><tr><td>Maverick2</td><td>11111111111111111</td><td>1</td><td>01:00:03</td><td>20 ms</td></tr></table>"
-SERVER_IP=127.0.0.1
-SERVER_PORT=27500
-PASSWORD=Qwe123qwe
+GAMEDIR=/home/steam/stationeers
+STEAMCMD=/home/steam
 
+#Server config
+SERVER_IP=127.0.0.1 # Server IP (default localhost)
+WORLD_TYPE=Mars # Space, Mars, Terrain
+AUTOSAVE=300  # Autosave interval in seconds
+WORLDNAME=Mars_One # Name for saves
+CLEARALLINTERVAL=60
+
+#Autoconfig from default.ini
+PASSWORD=$(cat $GAMEDIR/default.ini | grep PASSWORD | awk -F"=" '{print $2}')
+SERVER_PORT=$(cat $GAMEDIR/default.ini | grep GAMEPORT | awk -F"=" '{print $2}')
+SERVER_NAME=$(cat $GAMEDIR/default.ini | grep SERVERNAME | awk -F"=" '{print $2}')
+MAP_NAME=$(cat $GAMEDIR/default.ini | grep MAPNAME | awk -F"=" '{print $2}')
+MAXPLAYERS=$(cat $GAMEDIR/default.ini | grep MAXPLAYER | awk -F"=" '{print $2}')
 
 TMP=$(mktemp)
 /usr/bin/curl --cookie-jar $TMP http://$SERVER_IP:$SERVER_PORT/console/run?command=login%20$PASSWORD > /dev/null 2>&1
+
+function PORT {
+ ( exec 3</dev/tcp/$SERVER_IP/$SERVER_PORT ) >/dev/null 2>&1
+ if (( $?==0 ))
+  then
+   PORT_STATUS=1
+  else
+   PORT_STATUS=0
+ fi
+ exec 3<&-
+}
+
+function START {
+ ( /home/steam/stationeers/rocketstation_DedicatedServer.x86_64 -autostart -nographics -batchmode -autosaveinterval=$AUTOSAVE -worldname="$WORLDNAME" -worldtype=$WORLD_TYPE -gameport=$SERVERPORT -clearallinterval=$CLEARALLINTERVAL & ) > /dev/null 2>&1
+ ( wait 1 ) > /dev/null 2>&1
+ PID=$(pidof rocketstation_DedicatedServer.x86_64)
+ if [ -z "$PID" ]
+  then
+   echo "Server NOT started!"
+   return
+  else
+   echo "Server starting..."
+ fi
+ PORT
+ while [ "$PORT_STATUS" == "0" ]
+  do
+   if [ "$с" == "20" ]
+    then
+     echo "Server NOT started!"
+     break
+   fi
+   PORT
+   if (($PORT_STATUS==1))
+    then
+     echo "Server started."
+    else
+     c=$c+1
+   fi
+   sleep 0.5
+
+   sleep 0.5
+  done
+
+}
+
+function KILL {
+ PID=$(pidof rocketstation_DedicatedServer.x86_64)
+ /bin/kill -15 $PID
+}
 
 function GET_USERS {
 if [ -n "${STATUS[3]}" ]
@@ -53,9 +114,13 @@ fi
 }
 
 
-
 function GET_STATUS {
-
+ PORT
+ if [ "$PORT_STATUS" == "0" ]
+  then
+   echo "Server not started!"
+   return
+ fi
  STATUS=$(/usr/bin/curl -s -b $TMP http://$SERVER_IP:$SERVER_PORT/console/run?command=status | sed s/\<br\>/\;/g 2>&1)
  #STATUS=$(echo $DEMO  | sed s/\<br\>/\;/g 2>&1)
  IFS=';' read -r -a STATUS <<< "$STATUS"
@@ -129,6 +194,16 @@ case $1 in
   message|notice)
     TEXT=$(echo $* | sed 's/message//g' | sed 's/notice//g')
     MESSAGE "$TEXT"
+    ;;
+  start)
+    START
+    ;;
+  stop)
+    KILL
+    ;;
+  port)
+    PORT
+    echo $PORT_STATUS
     ;;
   *)
     echo 'status <version|state|players|players_count>'\n
