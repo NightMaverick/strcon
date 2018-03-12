@@ -10,8 +10,9 @@
 
 #Script config
 DEMO="GameVersion : 0.1.1193.5974<br>GameStatus : Running<br>2 Player(s) connected.<br><table><tr><th>display name</th><th>steamId</th><th>score</th><th>playtime</th><th>ping</th></tr><tr><td>Maverick</td><td>22222222222222222</td><td>0</td><td>00:00:03</td><td>2 ms</td></tr><tr><td>Maverick2</td><td>11111111111111111</td><td>1</td><td>01:00:03</td><td>20 ms</td></tr></table>"
-GAMEDIR=/home/steam/stationeers
-STEAMCMD=/home/steam
+USER=steam
+STEAMCMD=/home/$USER
+GAMEDIR=$STEAMCMD/stationeers
 
 #Server config
 SERVER_IP=127.0.0.1 # Server IP (default localhost)
@@ -19,6 +20,8 @@ WORLD_TYPE=Mars # Space, Mars, Terrain
 AUTOSAVE=300  # Autosave interval in seconds
 WORLDNAME=Mars_One # Name for saves
 CLEARALLINTERVAL=60
+SHUTDOWN_TIME=30
+SHUTDOWN_MESSAGE="Server will shutdown in "$SHUTDOWN_TIME" seconds"
 
 #Autoconfig from default.ini
 PASSWORD=$(cat $GAMEDIR/default.ini | grep RCONPASSWORD | awk -F"=" '{print $2}')
@@ -41,52 +44,18 @@ function PORT {
  exec 3<&-
 }
 
-
-function KILL {
- PID=$(pidof rocketstation_DedicatedServer.x86_64)
- /bin/kill -15 $PID
-}
-
-function GET_USERS {
-if [ -n "${STATUS[3]}" ]
- then
-  TABLE=$(echo ${STATUS[3]} | sed s/\<table\>//g | sed s/\<\\/table\>//g | sed s/\<tr\>//g | sed s/\<\\/tr\>/\;/g )
-  IFS=';' read -r -a TABLE <<< "$TABLE"
-  for (( i = 1; i <= ${#TABLE[@]}-1; i++ )){
-   USER_ROW=$(echo ${TABLE[i]} | sed s/\<td\>//g | sed s/\<\\/td\>/\;/g)
-   IFS=';' read -r -a USER_ARRAY <<< "$USER_ROW"
-   USER_NAME[$(($i-1))]=${USER_ARRAY[0]}
-   STEAM_ID[$(($i-1))]=${USER_ARRAY[1]}
-   SCORE[$(($i-1))]=${USER_ARRAY[2]}
-   PLAY_TIME[$(($i-1))]=${USER_ARRAY[3]}
-   PING[$(($i-1))]=$(echo ${USER_ARRAY[4]} | sed s/\ //g)
-  }
- else
-  TABLE=0
-fi
-}
-
-function USERS_LIST {
-GET_USERS
-if [ "$TABLE" == 0 ]
- then
-  echo "No Players"
- else
-  for i in ${!STEAM_ID[@]}
-   do
-    TOTAL[$i]=$(($i+1))" "${USER_NAME[i]}" "${STEAM_ID[i]}" "${SCORE[i]}" "${PLAY_TIME[$i]}" "${PING[$i]}
-   done
-  printf "%s\t| %s\t| %s\t| %s\t| %s\t| %s\n" "#" "User name" "Steam ID" "Score" "Play time" "Ping" "" "" "" "" "" "" ${TOTAL[@]} | column -t -s $'\t'
-fi
-}
-
-
 function GET_STATUS {
  PORT
  if [ "$PORT_STATUS" == "0" ]
   then
-   echo "Server not started!"
-   return
+   if [ "$1" == "silent" ]
+    then
+     GAME_STATUS="Stopped"
+     return
+    else
+    echo "Server not started!"
+    return
+  fi
  fi
  STATUS=$(/usr/bin/curl -s -b $TMP http://$SERVER_IP:$SERVER_PORT/console/run?command=status | sed s/\<br\>/\;/g 2>&1)
  #STATUS=$(echo $DEMO  | sed s/\<br\>/\;/g 2>&1)
@@ -132,6 +101,84 @@ function GET_STATUS {
  fi
 }
 
+
+function SHUTDOWN {
+ GET_STATUS silent
+ if [ "$GAME_STATUS" == "Stopped" ]
+  then
+   echo "Server alredy stoped!"$GAME_STATUS
+   return
+ fi
+ if [ -n "$1" ]
+  then
+   TEXT=$( echo $1 | awk -F"-t=" '{print $1}')
+   TIME=$( echo $1 | awk -F"-t=" '{print $2}')
+   if [ -z "$TIME" ]
+    then
+     TIME=$SHUTDOWN_TIME
+   fi
+   if [ -z "$TEXT" ]
+    then
+     TEXT="Server will shutdown in "$TIME" seconds"
+   fi
+  else
+   TIME=$SHUTDOWN_TIME
+   TEXT="Server will shutdown in "$TIME" seconds"
+ fi
+# http://213.132.76.184:27500/console/run?command=shutdown%2520-m%2520%2522asdasd%2520asd%2520asd%2522%2520-t%25205
+echo "Server will shutdown in "$TIME" seconds with message: "$TEXT
+TEXT=$(echo $TEXT | sed 's/ /%20/g')
+/usr/bin/curl -s -b $TMP "http://$SERVER_IP:$SERVER_PORT/console/run?command=shutdown%20-m%20%22$TEXT%22%20-t%20$TIME"
+return
+}
+
+function KILL {
+ GET_STATUS silent
+ if [ "$GAME_STATUS" == "Stopped"]
+  then
+   echo "Server alredy stoped!"
+   return
+ fi
+ PID=$(pidof rocketstation_DedicatedServer.x86_64)
+ echo "Emergency stop of the server..."
+ /bin/kill -15 $PID
+}
+
+function GET_USERS {
+if [ -n "${STATUS[3]}" ]
+ then
+  TABLE=$(echo ${STATUS[3]} | sed s/\<table\>//g | sed s/\<\\/table\>//g | sed s/\<tr\>//g | sed s/\<\\/tr\>/\;/g )
+  IFS=';' read -r -a TABLE <<< "$TABLE"
+  for (( i = 1; i <= ${#TABLE[@]}-1; i++ )){
+   USER_ROW=$(echo ${TABLE[i]} | sed s/\<td\>//g | sed s/\<\\/td\>/\;/g)
+   IFS=';' read -r -a USER_ARRAY <<< "$USER_ROW"
+   USER_NAME[$(($i-1))]=${USER_ARRAY[0]}
+   STEAM_ID[$(($i-1))]=${USER_ARRAY[1]}
+   SCORE[$(($i-1))]=${USER_ARRAY[2]}
+   PLAY_TIME[$(($i-1))]=${USER_ARRAY[3]}
+   PING[$(($i-1))]=$(echo ${USER_ARRAY[4]} | sed s/\ //g)
+  }
+ else
+  TABLE=0
+fi
+}
+
+function USERS_LIST {
+GET_USERS
+if [ "$TABLE" == 0 ]
+ then
+  echo "No Players"
+ else
+  for i in ${!STEAM_ID[@]}
+   do
+    TOTAL[$i]=$(($i+1))" "${USER_NAME[i]}" "${STEAM_ID[i]}" "${SCORE[i]}" "${PLAY_TIME[$i]}" "${PING[$i]}
+   done
+  printf "%s\t| %s\t| %s\t| %s\t| %s\t| %s\n" "#" "User name" "Steam ID" "Score" "Play time" "Ping" "" "" "" "" "" "" ${TOTAL[@]} | column -t -s $'\t'
+fi
+}
+
+
+
 function START {
  GET_STATUS silent
  if [ "$GAME_STATUS" == "Joining" -o "$GAME_STATUS" == "Running" ]
@@ -140,7 +187,7 @@ function START {
    return
  fi
  ( $GAMEDIR/rocketstation_DedicatedServer.x86_64 -autostart -nographics -batchmode -autosaveinterval=$AUTOSAVE -worldname="$WORLDNAME" -worldtype=$WORLD_TYPE -gameport=$SERVERPORT -clearallinterval=$CLEARALLINTERVAL & ) > /dev/null 2>&1
- ( wait 1 ) > /dev/null 2>&1
+ ( sleep 1 ) > /dev/null 2>&1
  PID=$(pidof rocketstation_DedicatedServer.x86_64)
  if [ -z "$PID" ]
   then
@@ -170,6 +217,11 @@ function START {
 
 function MESSAGE {
  GET_STATUS silent
+  if [ "$GAME_STATUS" == "Stopped" ]
+  then
+   echo "Server alredy stoped!"
+   return
+ fi
  if [ "$GAME_STATUS" == "Joining" ]
   then
    echo 'Server waits for players to connect.'
@@ -184,6 +236,19 @@ function MESSAGE {
  fi
  TEXT=$(echo $TEXT | sed 's/ /%20/g' 2>&1)
  /usr/bin/curl -s -b $TMP http://$SERVER_IP:$SERVER_PORT/console/run?command=notice%20%22$TEXT%22
+}
+
+function UPDATE {
+ GET_STATUS silent
+ if [ "$GAME_STATUS" == "Joining" -o "$GAME_STATUS" == "Running" ]
+  then
+   SHUTDOWN "Server stopping for update in 10 seconds -t=10"
+   PID=$(pidof rocketstation_DedicatedServer.x86_64)
+   $( wait $PID ) /dev/null 2>&1
+ fi
+ sudo -u $USER $STEAMCMD/steamcmd.sh +login anonymous +force_install_dir $GAMEDIR +app_update 600760 -beta beta validate +quit
+ START
+
 }
 
 function CONVERT_TIME {
@@ -201,16 +266,20 @@ case $1 in
   start)
     START
     ;;
+  shutdown)
+    SHUTDOWN_TEXT=$(echo $* | sed 's/shutdown//g' | sed 's/stop//g')
+    SHUTDOWN "$SHUTDOWN_TEXT"
+    ;;
   stop)
     KILL
     ;;
-  port)
-    PORT
-    echo $PORT_STATUS
+  update)
+    UPDATE
     ;;
   *)
-    echo 'status <version|state|players|players_count>'\n
+    echo 'status <version|state|players|players_count>'
     echo 'message|notice <text message>'
+    echo 'stop <shutdown message> <-t=(time in seconds for shutdown)>'
     exit 1
 esac
 
