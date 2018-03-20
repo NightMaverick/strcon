@@ -20,6 +20,10 @@ Commands:
 
 3) start - starting server
 
+4) shutdown <shutdown message> <-t=(time in seconds for shutdown)> - shutdown the server after a specified number of seconds with a specified message
+
+5) stop - immediate server shutdown, kill process
+
 ==========================================
 
 Консоль управления выделенным linux сервером из коммандной строки.
@@ -42,6 +46,9 @@ Commands:
 
 3) start - запуск сервера
 
+4) shutdown <shutdown message> <-t=(time in seconds for shutdown)> - выключение сервера через указанное количество секунд с указанным сообщением
+
+5) stop - немедленное прекращение процесса сервера.
 ==========================================
 
 by Maverick
