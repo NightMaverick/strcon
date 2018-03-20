@@ -20,6 +20,11 @@ Commands:
 
 3) start - starting server
 
+4) shutdown <shutdown message> <-t=(time in seconds for shutdown)> - shutdown the server after a specified number of seconds with a specified message
+
+5) stop - immediate server shutdown, kill process
+
+6) update - update server: a) shutdown server after 10 seconds b) run stemcmd.sh for update c) run server
 ==========================================
 
 Консоль управления выделенным linux сервером из коммандной строки.
@@ -42,6 +47,11 @@ Commands:
 
 3) start - запуск сервера
 
+4) shutdown <shutdown message> <-t=(time in seconds for shutdown)> - выключение сервера через указанное количество секунд с указанным сообщением
+
+5) stop - немедленное прекращение процесса сервера.
+
+6) update - обновление сервера: а) остановка сервера через 10 секунд б) Запуск stemcmd.sh для обновления в) Запуск сервера
 ==========================================
 
 by Maverick
