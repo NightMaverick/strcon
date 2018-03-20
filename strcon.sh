@@ -238,13 +238,42 @@ function MESSAGE {
  /usr/bin/curl -s -b $TMP http://$SERVER_IP:$SERVER_PORT/console/run?command=notice%20%22$TEXT%22
 }
 
+function LIST_SAVE {
+SAVE_DIR=$(find $GAMEDIR/saves/ -maxdepth 1 -mindepth 1 -type d -printf '%f ')
+echo ${SAVE_DIR[1]}
+#for i in "${SAVE_DIR[@]}"
+# do
+# echo $i
+#done
+
+}
+
+function SAVE {
+ echo $1
+ GET_STATUS silent
+ if [ "$GAME_STATUS" == "Joining" -o "$GAME_STATUS" == "Running" ]
+  then
+    if [ -n "$1" ]
+     then
+      SAVE_NAME=$(echo $1 | sed 's/ /%20/g' 2>&1)
+      echo $SAVE_NAME
+      /usr/bin/curl -s -b $TMP http://$SERVER_IP:$SERVER_PORT/console/run?command=save%20%22$SAVE_NAME%22
+     else
+      /usr/bin/curl -s -b $TMP http://$SERVER_IP:$SERVER_PORT/console/run?command=save%20%22$WORLDNAME%22
+      read TEXT
+    fi
+  else
+   echo 'Server NOT started!'
+ fi
+
+}
+
 function UPDATE {
  GET_STATUS silent
  if [ "$GAME_STATUS" == "Joining" -o "$GAME_STATUS" == "Running" ]
   then
    SHUTDOWN "Server stopping for update in 10 seconds -t=10"
-   PID=$(pidof rocketstation_DedicatedServer.x86_64)
-   $( wait $PID ) /dev/null 2>&1
+   $( sleep 11 ) /dev/null 2>&1
  fi
  sudo -u $USER $STEAMCMD/steamcmd.sh +login anonymous +force_install_dir $GAMEDIR +app_update 600760 -beta beta validate +quit
  START
@@ -267,7 +296,7 @@ case $1 in
     START
     ;;
   shutdown)
-    SHUTDOWN_TEXT=$(echo $* | sed 's/shutdown//g' | sed 's/stop//g')
+    SHUTDOWN_TEXT=$(echo $* | sed 's/shutdown//g')
     SHUTDOWN "$SHUTDOWN_TEXT"
     ;;
   stop)
@@ -276,10 +305,21 @@ case $1 in
   update)
     UPDATE
     ;;
+  save)
+    SAVE_TEXT=$(echo $* | sed 's/save//g')
+    SAVE "$SAVE_TEXT"
+    ;;
+  list)
+    LIST_SAVE
+    ;;
   *)
     echo 'status <version|state|players|players_count>'
     echo 'message|notice <text message>'
-    echo 'stop <shutdown message> <-t=(time in seconds for shutdown)>'
+    echo 'start'
+    echo 'shutdown <shutdown message> <-t=(time in seconds for shutdown)>'
+    echo 'stop'
+    echo 'update'
+    echo 'save <save name>'
     exit 1
 esac
 
