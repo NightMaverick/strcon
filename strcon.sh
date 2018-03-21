@@ -239,14 +239,15 @@ function MESSAGE {
 }
 
 function LIST_SAVE {
-SAVE_DIR=$(find $GAMEDIR/saves/ -maxdepth 1 -mindepth 1 -type d -printf '%f ')
-echo ${SAVE_DIR[1]}
-#for i in "${SAVE_DIR[@]}"
-# do
-# echo $i
-#done
-
+ DIR=$(find $GAMEDIR/saves/ -maxdepth 1 -mindepth 1 -type d -printf '%f;')
+ IFS=';' read -ra SAVE_DIR <<< "$DIR"
+ for i in "${!SAVE_DIR[@]}"; do
+  SAVE_TIME[$i]=$(stat --printf=%y $GAMEDIR/saves/"${SAVE_DIR[$i]}"/world.bin 2>/dev/null | awk -F"." '{print $1}')
+  echo $(($i+1))" "${SAVE_DIR[$i]}" "${SAVE_TIME[$i]}
+ done
 }
+
+
 
 function SAVE {
  echo $1
