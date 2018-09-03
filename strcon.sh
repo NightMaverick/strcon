@@ -1,12 +1,4 @@
 #!/bin/bash
-#==========================================
-#by Maverick
-#anton.maverick@gmail.com
-#:
-#Webmoney: Z428590895762
-#Yandex: 41001672790326
-#Bitcoin: 15p12jHb9Vuq9r7yPSt7Xwh2M1aWgBYvZC
-#==========================================
 
 #Script config
 DEMO="GameVersion : 0.1.1193.5974<br>GameStatus : Running<br>2 Player(s) connected.<br><table><tr><th>display name</th><th>steamId</th><th>score</th><th>playtime</th><th>ping</th></tr><tr><td>Maverick</td><td>22222222222222222</td><td>0</td><td>00:00:03</td><td>2 ms</td></tr><tr><td>Maverick2</td><td>11111111111111111</td><td>1</td><td>01:00:03</td><td>20 ms</td></tr></table>"
